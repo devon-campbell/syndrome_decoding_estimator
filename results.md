@@ -180,6 +180,106 @@ This makes BIKE's security more robust to parameter variations, while GBD's secu
 
 4. **Investigate algebraic bounds on K.** For generalized bicycle codes, K depends on the rank of circulant matrices over F\_2, which is determined by gcd structure of the generator polynomials. An analytic upper bound on K would be more defensible than empirical sampling.
 
+## Empirical K-Distribution (from qprc-sims campaign)
+
+The K=20 placeholder used above was tested empirically by sampling random
+seeds and computing K = 2ℓ - rank(H\_X) - rank(H\_Z) for each.
+
+### (15, 16, 10): 242 trials
+
+| Statistic | Value |
+|---|---|
+| Mean | 6.6 |
+| Median | 6 |
+| Max observed | 36 |
+| P90 | 12 |
+| P95 | 16 |
+| P99 (bootstrap 95% CI) | 21 [16, 32] |
+| K ≤ 20 | 98.8% |
+| K ≥ 2w=20 (hard break) | 2.1% |
+
+Distribution is concentrated at low K (33.5% at K=2), but has a long right
+tail extending to K=36 — well above the hard break at K=2w\_seed=20.
+
+### (35, 36, 16): 200 trials — the 128-bit boundary
+
+| Statistic | Value |
+|---|---|
+| Mean | 10.8 |
+| Median | 8 |
+| Max observed | **46** |
+| P90 | 20 |
+| P95 | 26 |
+| P99 (bootstrap 95% CI) | 36 [26, 46] |
+| K ≤ 20 (128-bit secure) | 91.0% |
+| K ≤ 30 | 98.0% |
+| K ≥ 2w=32 (hard break) | **2.0%** |
+
+```
+    K=  2:  34 (17.0%)  ######
+    K=  4:  19 ( 9.5%)  ###
+    K=  6:  23 (11.5%)  ####
+    K=  8:  30 (15.0%)  ######
+    K= 10:  13 ( 6.5%)  ##
+    K= 12:  11 ( 5.5%)  ##
+    K= 14:  18 ( 9.0%)  ###
+    K= 16:   9 ( 4.5%)  #
+    K= 18:  10 ( 5.0%)  ##
+    K= 20:  14 ( 7.0%)  ##
+    K= 22:   3 ( 1.5%)  #
+    K= 24:   4 ( 2.0%)  #
+    K= 26:   5 ( 2.5%)  #
+    K= 28:   2 ( 1.0%)  #
+    K= 36:   2 ( 1.0%)  #
+    K= 38:   1 ( 0.5%)  #
+    K= 46:   1 ( 0.5%)  #
+```
+
+### Security implications by K at each parameter set
+
+**Medium (35,36,16), n=2520, 2w=32:**
+
+| K | Best ISD (bits) | Status |
+|---|---|---|
+| 2 | inf | secure |
+| 8 | 233 | secure |
+| 14 | 185 | secure |
+| 20 | 130 | borderline 128-bit |
+| 26 | 83 | below 128-bit |
+| 36 | 27 | broken |
+| 46 | 25 | broken |
+
+**Target (63,64,24), n=8064, 2w=48:**
+
+| K | Best ISD (bits) | Status |
+|---|---|---|
+| 2 | inf | secure |
+| 8 | 409 | secure |
+| 20 | 305 | secure |
+| 36 | 155 | secure |
+| 46 | 58 | weak |
+| 48 | 51 | weak |
+
+### Implications
+
+1. **Medium parameters do NOT reliably achieve 128-bit security.** ~9% of
+   seeds produce K > 20, dropping below 128 bits. ~2% produce K ≥ 32, which
+   is essentially broken. Rejection sampling is mandatory at this size.
+
+2. **Target parameters are more robust** because the hard break K=48 is far
+   from the observed tail (max K=46 was at the smaller (35,36,16) params).
+   However, the K-distribution must be measured at (63,64,24) directly — it
+   may have a wider spread at larger ℓ.
+
+3. **The distribution has a consistent shape** across parameter sets:
+   concentrated at low K (mode at K=2), then a broad plateau, then a sparse
+   tail. ~2% of seeds hit K ≥ 2w\_seed. This tail fraction appears roughly
+   constant, suggesting a structural phenomenon rather than random fluctuation.
+
+4. **Rejection sampling policy:** discard seeds with K > K\_max where K\_max
+   is chosen per parameter set. At medium params, K\_max=20 retains 91% of
+   seeds. At target params, K\_max=40 would likely retain >95%.
+
 ## Reproduction
 
 All estimates were computed using the Syndrome Decoding Estimator with the following setup:
