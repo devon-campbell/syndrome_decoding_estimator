@@ -1,10 +1,27 @@
 from ctypes import cdll, c_float, c_int, c_bool, POINTER
 from os import listdir
+from os.path import join, dirname, abspath
 
-directory = "/usr/local/lib"
-for f in listdir(directory):
-    if "lib_SyndromeDecodingEstimator" in f:
-        name = f
+_search_dirs = [
+    "/usr/local/lib",
+    join(dirname(dirname(abspath(__file__))), "C", "build"),
+    join(dirname(dirname(abspath(__file__))), "local", "lib"),
+]
+
+name = None
+for directory in _search_dirs:
+    try:
+        for f in listdir(directory):
+            if "lib_SyndromeDecodingEstimator" in f:
+                name = join(directory, f)
+                break
+    except FileNotFoundError:
+        continue
+    if name:
+        break
+
+if name is None:
+    raise RuntimeError("lib_SyndromeDecodingEstimator not found in: " + str(_search_dirs))
 
 lib = cdll.LoadLibrary(name)
 lib.initialize()
