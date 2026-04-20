@@ -209,37 +209,44 @@ At (11,12) and (15,16), K=2 (only 2 logical qubits). The codes are too
 small and degenerate for threshold behavior. At (20,21), K=9 but the code
 still lacks the structural properties needed for error correction.
 
-### Blocker
+### Blocker (refined diagnosis)
 
-**Task 1 cannot proceed without proper (a,b) pairs where b ≠ a.**
+**Task 1 requires (a,b) pairs where b is algebraically independent of a
+— not just b ≠ a.**
 
-Finding weight-w elements in V_a (other than a itself) is computationally
-equivalent to solving an ISD instance on the code defined by V_a. At the
-parameters of interest (ℓ ≥ 240, dim(V_a) ≈ ℓ/2, w ≈ 10-20), this is a
-rate-1/2 code with target weight far below the Gilbert-Varshamov bound.
-The ISD complexity for finding such elements is ~2^20-2^40 depending on
-parameters — feasible but not trivial.
+Initial diagnosis suggested any b ≠ a in V_a would suffice. Testing revealed
+that group-ring shifts of a (the only non-a elements our sampler could find)
+produce the same code: σ(shift(a,g)) is a row permutation of σ(a), so
+rank([σ(a)|σ(b)]) = rank(σ(a)) regardless. K is unchanged, the code is
+equally degenerate.
+
+The requirement is b ∈ V_a with wt(b) = w such that σ(b) ⊄ rowspace(σ(a)).
+Exhaustive enumeration at ℓ=15 confirms such elements exist (18 out of 20
+weight-w elements of V_a are not shifts of a). But finding them at ℓ ≥ 132
+is equivalent to solving an ISD instance on a [ℓ, ℓ/2] code with target
+weight ~w.
 
 ### Options to unblock Task 1
 
 1. **Use known polynomial pairs from the literature.** Panteleev-Kalachev
-   and other bicycle code constructions specify explicit (a,b) pairs with
-   known good properties. These could be used directly.
+   (2021) Table 3 and Bravyi et al. specify explicit (a,b) pairs for
+   generalized bicycle codes with known good distance and threshold behavior.
+   These can be plugged directly into `run_threshold.py`.
 
-2. **Implement a dedicated low-weight codeword finder.** A custom ISD
-   implementation (Stern/Dumer) optimized for this specific problem could
-   find weight-w elements in V_a in seconds for the smaller parameter sets.
+2. **Implement Stern/Dumer ISD** for finding weight-w elements in V_a that
+   are not shifts of a. At ℓ=132, ISD complexity is ~2^20 (seconds). At
+   ℓ=840, ~2^30 (minutes). At ℓ=4032, ~2^40+ (hours, but only done once).
 
-3. **Accept externally-supplied code parameters.** If specific (a,b) pairs
-   are available from the paper's construction (e.g., from the experimental
-   data in §7), they can be plugged directly into the simulation.
+3. **Accept externally-supplied (a,b) pairs.** If specific pairs are available
+   from the paper's existing experimental data (§7), they can be used directly.
 
-4. **Use the group ring structure.** Elements of V_a that have weight w
-   may be findable via algebraic methods specific to the commutative group
-   ring F_2[Z_r × Z_s], rather than treating V_a as a generic subspace.
+4. **Algebraic approach.** V_a has special structure as a group-ring kernel.
+   Techniques from algebraic coding theory (e.g., using the CRT decomposition
+   of F_2[Z_r × Z_s]) may allow direct construction of low-weight elements
+   without generic ISD.
 
-**Recommendation:** Option 3 is fastest. If specific (a,b) pairs from the
-construction are available, provide them and Task 1 can resume immediately.
+**Recommendation:** Option 1 or 3 is fastest (minutes to implement). Option 2
+is the general solution but requires more development time.
 
 ---
 
